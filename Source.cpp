@@ -5,12 +5,11 @@
 
 class Subject {
 public:
-    int sum(int arg1, int arg2) {
+    int f3(int arg1, int arg2) {
         return arg1 + arg2;
     }
 };
 
-// Перемещаем to_string выше get_arg_name
 template <typename T>
 static std::string to_string(const T& value) {
     std::ostringstream oss;
@@ -29,7 +28,7 @@ public:
     int invoke(std::unordered_map<std::string, int>& args) {
         for (auto& pair : defaultArgs) {
             if (args.find(pair.first) == args.end()) {
-                // Используем at() для бросания исключения при отсутствии ключа
+                
                 args[pair.first] = pair.second;
             }
         }
@@ -51,9 +50,32 @@ private:
     }
 };
 
+class Engine {
+public:
+    void register_command(const std::string& command, Wrapper<int, int>& wrapper) {
+        commands[command] = [&wrapper](std::unordered_map<std::string, int>& args) {
+            return wrapper.invoke(args);
+            };
+    }
+
+    int execute(const std::string& command, std::unordered_map<std::string, int>& args) {
+        if (commands.find(command) != commands.end()) {
+            return commands[command](args);
+        }
+        return 0;
+    }
+
+private:
+    std::unordered_map<std::string, std::function<int(std::unordered_map<std::string, int>&)>> commands;
+};
+
 int main() {
     Subject subj;
-    Wrapper<int, int> wrapper([&subj](int arg1, int arg2) { return subj.sum(arg1, arg2); }, { {"arg1", 0}, {"arg2", 0} });
+    Wrapper<int, int> wrapper([&subj](int arg1, int arg2) { return subj.f3(arg1, arg2); }, { {"arg1", 0}, {"arg2", 0} });
+    Engine engine;
+    engine.register_command("command1", wrapper);
+    std::unordered_map<std::string, int> args = { {"arg1", 4}, {"arg2", 5} };
+    std::cout << engine.execute("command1", args) << std::endl;
 
     return 0;
 }
